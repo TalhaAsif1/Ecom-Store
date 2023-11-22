@@ -6,7 +6,7 @@ namespace Ecom.Interfaces
     {
         Product GetProductById(int productId);
         IEnumerable<Product> GetAllProducts();
-        bool AddProduct(Product product);
+        bool AddProduct(Product product, int categoryId);
         bool UpdateProduct(Product product);
         bool DeleteProduct(Product product);
         bool Save();

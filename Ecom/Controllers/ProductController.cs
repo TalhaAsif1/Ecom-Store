@@ -8,8 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Ecom.Controllers
 {
-        [Route("api/[controller]")]
-        [ApiController]
+    [Route("api/[controller]")]
+    [ApiController]
     [Authorize(Roles = "Admin")]
     public class ProductController : Controller
     {
@@ -28,7 +28,7 @@ namespace Ecom.Controllers
             [ProducesResponseType(200, Type = typeof(IEnumerable<Product>))]
             public IActionResult GetProducts()
             {
-                var products = _mapper.Map<List<ProductDto>>(_productRepository.GetAllProducts());
+                var products = _mapper.Map<List<ProductCategoryDto>>(_productRepository.GetAllProducts());
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
@@ -44,7 +44,7 @@ namespace Ecom.Controllers
                 if (!_productRepository.ProductExists(productId))
                     return NotFound();
 
-                var product = _mapper.Map<ProductDto>(_productRepository.GetProductById(productId));
+                var product = _mapper.Map<ProductCategoryDto>(_productRepository.GetProductById(productId));
 
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
@@ -77,7 +77,7 @@ namespace Ecom.Controllers
             var productMap = _mapper.Map<Product>(productCreate);
             productMap.Category = _categoryRepository.GetCategory(categoryId);
 
-            if (!_productRepository.AddProduct(productMap))
+            if (!_productRepository.AddProduct(productMap, categoryId))
             {
                 ModelState.AddModelError("", "Something went wrong while saving");
                 return StatusCode(500, ModelState);

@@ -9,5 +9,7 @@
 
         public Category Category { get; set; }
         public ICollection<OrderDetail> OrderDetail { get; set; }   
+
+
     }
 }

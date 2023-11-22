@@ -12,9 +12,16 @@ namespace Ecom.Repositoy
         {
             _context = context;
         }
-        public bool AddProduct(Product product)
+        public bool AddProduct(Product product, int categoryId)
         {
-            _context.Add(product);
+            var category = _context.Categories.Where(c => c.Id == categoryId).FirstOrDefault();
+
+            var productCategory = new Product()
+            {
+               Category = category,
+            };
+           _context.Add(productCategory);
+           _context.Add(product);
             return Save();
         }
 
@@ -31,15 +38,12 @@ namespace Ecom.Repositoy
 
         public Product GetProductById(int productId)
         {
-            return _context.Products.Where(p => p.Id == productId).FirstOrDefault();
-
-    
+            return _context.Products.Where(p => p.Id == productId).FirstOrDefault();    
        }
 
         public bool ProductExists(int id)
         {
             return _context.Products.Any(p=>p.Id== id);
-
         }
 
         public bool Save()

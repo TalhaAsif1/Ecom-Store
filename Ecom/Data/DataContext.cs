@@ -6,6 +6,8 @@ namespace Ecom.Data
     public class DataContext : DbContext
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options) { }
+
+        public DbSet<UserRegister> UserRegisters { get; set; }        
         public DbSet<User> Users { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<Product> Products { get; set; }
@@ -14,9 +16,9 @@ namespace Ecom.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Configure your model relationships here
+            // Configure OrderDetail entity
             modelBuilder.Entity<OrderDetail>()
-          .HasKey(od => new { od.OrderId, od.ProductId });
+                .HasKey(od => new { od.OrderId, od.ProductId });
 
             modelBuilder.Entity<OrderDetail>()
                 .HasOne(od => od.Order)
@@ -27,7 +29,6 @@ namespace Ecom.Data
                 .HasOne(od => od.Product)
                 .WithMany(p => p.OrderDetail)
                 .HasForeignKey(od => od.ProductId);
-
         }
     }
 }

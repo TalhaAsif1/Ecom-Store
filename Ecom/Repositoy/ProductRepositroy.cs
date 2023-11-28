@@ -14,14 +14,17 @@ namespace Ecom.Repositoy
         }
         public bool AddProduct(Product product, int categoryId)
         {
-            var category = _context.Categories.Where(c => c.Id == categoryId).FirstOrDefault();
+            var category = _context.Categories.Find(categoryId);
 
-            var productCategory = new Product()
+            if (category == null)
             {
-               Category = category,
-            };
-           _context.Add(productCategory);
-           _context.Add(product);
+                // Category not found
+                return false;
+            }
+
+            product.Category = category;
+            _context.Products.Add(product);
+
             return Save();
         }
 
@@ -57,6 +60,11 @@ namespace Ecom.Repositoy
             _context.Update(product);
 
             return Save();
+        }
+        public bool ProductNameExists(string productName, int categoryId)
+        {
+            return _context.Products
+                .Any(p => p.Name.Trim().ToUpper() == productName.TrimEnd().ToUpper() && p.categoryId == categoryId);
         }
     }
 }

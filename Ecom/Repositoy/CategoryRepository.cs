@@ -2,6 +2,7 @@
 using Ecom.Data;
 using Ecom.Interfaces;
 using Ecom.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Ecom.Repositoy
 {
@@ -40,10 +41,7 @@ namespace Ecom.Repositoy
             return _context.Categories.Where(c => c.Id == id).FirstOrDefault();
         }
 
-        public ICollection<Product> GetProductByCategory(int id)
-        {
-            return (ICollection<Product>)_context.Products.Where(c => c.Id == id).Select(c => c.Name).ToList();
-        }
+
 
         public bool Save()
         {
@@ -55,6 +53,19 @@ namespace Ecom.Repositoy
         {
             _context.Update(category);
             return Save();
+        }
+        public ICollection<Product> GetProductByCategory(int Id)
+        {
+            var category = _context.Categories
+                .Include(c => c.Products) // Include the navigation property
+                .FirstOrDefault(c => c.Id == Id);
+
+            if (category != null)
+            {
+                return category.Products.ToList();
+            }
+
+            return new List<Product>();
         }
     }
 }

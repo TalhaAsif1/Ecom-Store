@@ -4,13 +4,16 @@ using Ecom.Interfaces;
 using Ecom.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 
 namespace Ecom.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+   // [Authorize(Roles = "User")]
     public class CategoryController : Controller
     {
        private readonly ICategoryRepository _categoryRepository;
@@ -22,8 +25,8 @@ namespace Ecom.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet, AllowAnonymous]
-        [ProducesResponseType(200, Type=typeof(IEnumerable<Category>))]
+        [HttpGet]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Category>))]
         public IActionResult GetCategories()
         {
             var categories = _mapper.Map<List<CategoryDto>>(_categoryRepository.GetCategories());
@@ -31,10 +34,10 @@ namespace Ecom.Controllers
                 return BadRequest(ModelState);
 
             return Ok(categories);
+
         }
 
-
-        [HttpGet("{categoryId}"),AllowAnonymous]
+        [HttpGet("{categoryId}")]
         [ProducesResponseType(200, Type = typeof(Category))]
         [ProducesResponseType(400)]
         public IActionResult GetCategory(int categoryId)
@@ -92,7 +95,7 @@ namespace Ecom.Controllers
                 return BadRequest(ModelState);
 
             if (categoryId != updateCategory.Id)
-                return BadRequest(ModelState);
+               return BadRequest(ModelState);
 
             if (!_categoryRepository.CategoryExists(categoryId))
                 return NotFound();
@@ -132,6 +135,34 @@ namespace Ecom.Controllers
             }
             return NoContent();
         }
+
+        [HttpGet("{categoryId}/products")]
+        public IActionResult GetProductsInCategory(int categoryId)
+        {
+            var products = _categoryRepository.GetProductByCategory(categoryId);
+
+            // Map the domain model to DTO
+            var productDtos = new List<ProductInCategoryDto>();
+            foreach (var product in products)
+            {
+                var productDto = new ProductInCategoryDto
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    Price = product.Price,
+                    Quantity = product.Quantity,
+                    CategoryId = product.Category.Id,
+                    CategoryName = product.Category.Name,
+                    CategoryDescription = product.Category.Description
+                };
+
+                productDtos.Add(productDto);
+            }
+
+            return Ok(productDtos);
+        }
+
+
 
     }
 }

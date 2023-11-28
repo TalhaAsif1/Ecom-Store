@@ -12,6 +12,8 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
+// For JWT Token generation and Authorization. 
+
 namespace Ecom.Controllers
 {
     [Route("api/[controller]")]

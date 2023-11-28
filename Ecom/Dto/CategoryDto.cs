@@ -1,4 +1,6 @@
-﻿namespace Ecom.Dto
+﻿using Ecom.Models;
+
+namespace Ecom.Dto
 {
     public class CategoryDto
     {

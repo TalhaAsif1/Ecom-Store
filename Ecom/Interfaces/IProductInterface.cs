@@ -11,5 +11,6 @@ namespace Ecom.Interfaces
         bool DeleteProduct(Product product);
         bool Save();
         bool ProductExists(int id);
+        bool ProductNameExists(string productName, int categoryId);
     }
 }

@@ -10,7 +10,7 @@ namespace Ecom.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    [AllowAnonymous]
     public class UserController : Controller
     {
         private readonly IUserInterface _userRepository;
@@ -86,18 +86,14 @@ namespace Ecom.Controllers
         }
 
         [HttpPut("{userId}")]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(204)] // No content
-        [ProducesResponseType(404)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult UpdateUser(int userId, [FromBody] UserDto updateUser)
         {
-            if (updateUser == null)
+            if (updateUser == null || userId != updateUser.Id)
             {
-                return BadRequest(ModelState);
-            }
-
-            if (userId != updateUser.Id)
-            {
+                ModelState.AddModelError("", "Invalid user data or user ID mismatch");
                 return BadRequest(ModelState);
             }
 
@@ -117,12 +113,13 @@ namespace Ecom.Controllers
 
             if (!_userRepository.UpdateUser(userMap))
             {
-                ModelState.AddModelError("", "Something went wrong updating category");
-                return StatusCode(500, ModelState);
+                ModelState.AddModelError("", "Something went wrong updating user");
+                return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
             }
 
             return NoContent();
         }
+
 
         [HttpDelete("{userId}")]
         [ProducesResponseType(400)]

@@ -10,7 +10,8 @@ namespace Ecom.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [AllowAnonymous]
+    [Authorize(Roles ="User")]
+    [Authorize(Roles ="Admin")]
     public class UserController : Controller
     {
         private readonly IUserInterface _userRepository;

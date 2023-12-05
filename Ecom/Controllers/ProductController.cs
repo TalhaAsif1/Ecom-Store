@@ -2,6 +2,7 @@
 using Ecom.Dto;
 using Ecom.Interfaces;
 using Ecom.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace Ecom.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    // [Authorize(Roles = "Admin")] // Uncomment this line if you want to restrict access to Admin role
+    [Authorize(Roles = "Admin")] 
     public class ProductController : ControllerBase
     {
         private readonly IProductInterface _productRepository;
@@ -28,8 +29,21 @@ namespace Ecom.Controllers
         [ProducesResponseType(200, Type = typeof(IEnumerable<ProductDto>))]
         public IActionResult GetProducts()
         {
-            var products = _mapper.Map<List<ProductDto>>(_productRepository.GetAllProducts());
-            return Ok(products);
+
+            var isAdmin = User.IsInRole("Admin");
+            
+
+            if (isAdmin)
+            {
+                // Logic for admin users
+                var products = _mapper.Map<List<ProductDto>>(_productRepository.GetAllProducts());
+                return Ok(products);
+            }
+            else
+            {
+                return Forbid();  // Return 403 Forbidden if the user is not an admin
+            }
+
         }
 
         [HttpGet("{productId}")]
@@ -51,6 +65,12 @@ namespace Ecom.Controllers
         [ProducesResponseType(500)] // Internal Server Error
         public IActionResult CreateProduct([FromQuery] int categoryId, [FromBody] ProductDto productCreate)
         {
+            if (categoryId <= 0)
+            {
+                ModelState.AddModelError("categoryId", "Category ID must be specified.");
+                return BadRequest(ModelState);
+            }
+
             if (productCreate == null)
                 return BadRequest(ModelState);
 
@@ -60,6 +80,7 @@ namespace Ecom.Controllers
                 ModelState.AddModelError("Name", "The product name is required.");
                 return BadRequest(ModelState);
             }
+
 
             // Check for duplicate product names
             var existingProduct = _productRepository.GetAllProducts()
@@ -71,7 +92,10 @@ namespace Ecom.Controllers
                 return UnprocessableEntity(ModelState);
             }
 
-            // Other validation logic...
+            if (!User.IsInRole("Admin"))
+            {
+                return Forbid();  // Return 403 Forbidden if the user is not an admin
+            }
 
             // If the ModelState is valid, proceed with creating the product
             if (!ModelState.IsValid)

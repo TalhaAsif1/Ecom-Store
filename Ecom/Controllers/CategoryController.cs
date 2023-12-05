@@ -1,40 +1,51 @@
 ﻿using AutoMapper;
+using DotNetOpenAuth.InfoCard;
 using Ecom.Dto;
 using Ecom.Interfaces;
 using Ecom.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
-using System.Text.Json;
-
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Ecom.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-   // [Authorize(Roles = "User")]
+    [Authorize(Roles = "User,Admin")]
+
     public class CategoryController : Controller
     {
-       private readonly ICategoryRepository _categoryRepository;
-       private readonly IMapper _mapper;
-
-        public CategoryController(ICategoryRepository categoryRepository, IMapper mapper)
+        private readonly ICategoryRepository _categoryRepository;
+        private readonly IMapper _mapper;
+        public CategoryController(ICategoryRepository categoryRepository, IMapper mapper, UserManager<IdentityUser> userManager)
         {
-           _categoryRepository = categoryRepository;
+            _categoryRepository = categoryRepository;
             _mapper = mapper;
         }
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Category>))]
-        public IActionResult GetCategories()
+        public Task<IActionResult> GetCategories()
         {
-            var categories = _mapper.Map<List<CategoryDto>>(_categoryRepository.GetCategories());
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var userTypeClaim = HttpContext.User.FindFirst("UserType");
 
-            return Ok(categories);
+            var isAdmin = HttpContext.User.IsInRole("Admin");
 
+            if (isAdmin || (userTypeClaim != null && userTypeClaim.Value == "Regular"))
+            {
+                var categories = _mapper.Map<List<CategoryDto>>(_categoryRepository.GetCategories());
+
+                if (!ModelState.IsValid)
+                    return Task.FromResult<IActionResult>(BadRequest(ModelState));
+
+                return Task.FromResult<IActionResult>(Ok(categories));
+            }
+
+            return Task.FromResult<IActionResult>(Unauthorized(new { Message = "User not authorized to view categories." }));
         }
 
         [HttpGet("{categoryId}")]
@@ -45,13 +56,24 @@ namespace Ecom.Controllers
             if (!_categoryRepository.CategoryExists(categoryId))
                 return NotFound();
 
-            var category = _mapper.Map<CategoryDto>(_categoryRepository.GetCategory(categoryId));
+            var userTypeClaim = HttpContext.User.FindFirst("UserType");
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var isAdmin = HttpContext.User.IsInRole("Admin");
 
-            return Ok(category);
+            if (isAdmin || (userTypeClaim != null && userTypeClaim.Value == "Premium"))
+            {
+                var category = _mapper.Map<CategoryDto>(_categoryRepository.GetCategory(categoryId));
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                return Ok(category);
+            }
+
+            // Unauthorized for other user types
+            return Unauthorized(new { Message = "User not authorized to view this category." });
         }
+
 
 
         [HttpPost]
@@ -139,9 +161,20 @@ namespace Ecom.Controllers
         [HttpGet("{categoryId}/products")]
         public IActionResult GetProductsInCategory(int categoryId)
         {
-            var products = _categoryRepository.GetProductByCategory(categoryId);
+            // Check if the category exists
+            var category = _categoryRepository.GetCategory(categoryId);
+            if (category == null)
+            {
+                return NotFound($"Category with ID {categoryId} not found");
+            }
 
-            // Map the domain model to DTO
+            // Check if there are products in the category
+            var products = _categoryRepository.GetProductByCategory(categoryId);
+            if (products.Count == 0)
+            {
+                return NotFound($"No products found in category with ID {categoryId}");
+            }
+
             var productDtos = new List<ProductInCategoryDto>();
             foreach (var product in products)
             {
@@ -161,8 +194,6 @@ namespace Ecom.Controllers
 
             return Ok(productDtos);
         }
-
-
 
     }
 }

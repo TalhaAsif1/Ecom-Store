@@ -2,16 +2,23 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
+
+
+/// <summary>
+/// For admin registration and authorization
+/// </summary>
+
 
 [ApiController]
 [Route("api/[controller]")]
-public class AdminController : ControllerBase
+public class AdminLoginController : ControllerBase
 {
     private readonly UserManager<IdentityUser> userManager;
     private readonly RoleManager<IdentityRole> roleManager;
 
-    public AdminController(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+    public AdminLoginController(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
     {
         this.userManager = userManager;
         this.roleManager = roleManager;
@@ -21,8 +28,6 @@ public class AdminController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> RegisterAdmin([FromBody] AdminRegistrationModel model)
     {
-        // Add your validation logic for the registration model
-
         var newAdmin = new IdentityUser
         {
             UserName = model.Email,
@@ -40,6 +45,7 @@ public class AdminController : ControllerBase
                 await roleManager.CreateAsync(new IdentityRole("Admin"));
             }
 
+            await userManager.AddClaimAsync(newAdmin, new Claim(ClaimTypes.Role, "Admin"));
             await userManager.AddToRoleAsync(newAdmin, "Admin");
 
             return Ok(new { Message = "Admin registered successfully with role 'Admin'." });

@@ -12,7 +12,7 @@ namespace Ecom.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+
     public class OrderController : Controller
     {
         private readonly IOrderInterface _orderRepository;
@@ -152,9 +152,5 @@ namespace Ecom.Controllers
 
             return NoContent();
         }
-
     }
-
-
-
 }

@@ -1,16 +1,22 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
+
+
+/// <summary>
+/// for user registration and authorization
+/// </summary>
 
 [ApiController]
 [Route("api/[controller]")]
-public class IdentityController : Controller
+public class UserLoginController : Controller
 {
     private readonly UserManager<IdentityUser> userManager;
     private readonly RoleManager<IdentityRole> roleManager;
 
-    public IdentityController(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+    public UserLoginController(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
     {
         this.userManager = userManager;
         this.roleManager = roleManager;
@@ -22,14 +28,13 @@ public class IdentityController : Controller
         var newUser = new IdentityUser
         {
             UserName = model.Email,
-            Email = model.Email
+            Email = model.Email,
         };
 
         var result = await userManager.CreateAsync(newUser, model.Password);
 
         if (result.Succeeded)
         {
-            // Check if the role "User" exists, create it if not
             var userRoleExists = await roleManager.RoleExistsAsync("User");
 
             if (!userRoleExists)
@@ -37,21 +42,25 @@ public class IdentityController : Controller
                 await roleManager.CreateAsync(new IdentityRole("User"));
             }
 
-            // Add the user to the "User" role during registration
             await userManager.AddToRoleAsync(newUser, "User");
+            await userManager.AddClaimAsync(newUser, new Claim(ClaimTypes.Role, "User"));
 
-            return Ok(new { Message = "User registered successfully with role 'User'." });
+            // Set user type claim based on the selected type
+            var userTypeClaim = new Claim("UserType", model.UserType);
+            await userManager.AddClaimAsync(newUser, userTypeClaim);
+
+            return Ok(new { Message = $"User registered successfully with role 'User'" });
         }
 
         return BadRequest(new { Message = "User registration failed.", Errors = result.Errors });
     }
 
-    // You can add other actions for managing users, roles, etc.
 }
 
 public class UserRegistrationModel
 {
     public string Email { get; set; }
-    public string Password { get; set; }
-    // Add other properties as needed
+    public string Password { get; set;}
+    public string UserType { get; set; } // Add UserType field
+
 }
